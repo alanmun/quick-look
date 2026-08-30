@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quick Look settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Quick Look</h1>
+
+    <section>
+      <h2>Looking things up</h2>
+
+      <label class="row">
+        <input type="checkbox" id="enabled">
+        <span><strong>Enabled</strong><small>Turn the whole extension off without uninstalling it.</small></span>
+      </label>
+
+      <label class="row block">
+        <span><strong>Trigger</strong><small>How a lookup starts.</small></span>
+        <select id="trigger">
+          <option value="dblclick">Double-click a word</option>
+          <option value="select">Any text selection</option>
+          <option value="modifier">Double-click while holding a key</option>
+        </select>
+      </label>
+
+      <label class="row block" id="modifierRow">
+        <span><strong>Held key</strong></span>
+        <select id="modifierKey">
+          <option value="Alt">Alt</option>
+          <option value="Shift">Shift</option>
+          <option value="Control">Control</option>
+        </select>
+      </label>
+
+      <label class="row">
+        <input type="checkbox" id="showExamples">
+        <span><strong>Show usage examples</strong><small>A short quotation under the definition, when one exists.</small></span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Getting the right meaning</h2>
+
+      <label class="row">
+        <input type="checkbox" id="useContextClues">
+        <span>
+          <strong>Use context clues from the page</strong>
+          <small>
+            Ranks meanings against the site you are on, the page title, and the
+            words either side of your selection &mdash; so <em>daemon</em> on a
+            programming site is a background process, not a minor deity.
+            This analysis happens entirely on your machine; only the word itself
+            is ever sent to Wiktionary.
+          </small>
+        </span>
+      </label>
+
+      <label class="row">
+        <input type="checkbox" id="autoTranslate">
+        <span>
+          <strong>Translate foreign words automatically</strong>
+          <small>
+            When a word is not in a language you read, show its meaning in
+            English. Uses the same Wiktionary request &mdash; no translation
+            service is contacted.
+          </small>
+        </span>
+      </label>
+
+      <label class="row">
+        <input type="checkbox" id="passageMode">
+        <span>
+          <strong>Explain whole sentences</strong>
+          <small>
+            Selecting a sentence picks out its unusual words and defines each
+            one. Which words count as unusual is decided on your machine.
+          </small>
+        </span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Plain-English explanation <span class="tag">optional</span></h2>
+      <p class="note">
+        Everything above works with no account and no configuration. This section
+        adds one thing the dictionary cannot do: restating a sentence in plain
+        English. It is off until you turn it on, and until then the extension has
+        no permission to reach any AI provider at all.
+      </p>
+      <p class="warn" id="egressWarning">
+        When enabled, the text you select is sent to the provider you connect.
+        That is a real change in where your reading goes &mdash; everything else
+        in Quick Look only ever contacts Wiktionary.
+      </p>
+
+      <div class="status" id="providerStatus">Checking…</div>
+
+      <div class="actions">
+        <button id="connect" class="primary">Sign in with OpenRouter</button>
+        <button id="disconnect" class="danger" hidden>Disconnect</button>
+      </div>
+      <p class="note small">
+        OpenRouter's sign-in uses OAuth with PKCE: no API key to copy, no client
+        secret, and the key that comes back belongs to your account, not to this
+        extension. It offers free models.
+      </p>
+
+      <details>
+        <summary>Use a different provider (paste a key)</summary>
+        <p class="note small">
+          Any OpenAI-compatible endpoint &mdash; Groq, Gemini's compatibility
+          layer, or a local Ollama server. The key is stored in extension
+          storage on this machine and is never sent anywhere except the endpoint
+          you name here.
+        </p>
+        <label class="field">
+          <span>Base URL</span>
+          <input type="url" id="llmBaseUrl" placeholder="https://api.groq.com/openai/v1">
+        </label>
+        <label class="field">
+          <span>Model</span>
+          <input type="text" id="llmModel" placeholder="llama-3.3-70b-versatile">
+        </label>
+        <label class="field">
+          <span>API key</span>
+          <input type="password" id="manualKey" placeholder="Paste key" autocomplete="off">
+        </label>
+        <button id="saveManual">Save key</button>
+      </details>
+
+      <label class="row" id="sendContextRow">
+        <input type="checkbox" id="llmSendContext">
+        <span>
+          <strong>Include surrounding sentence</strong>
+          <small>
+            Improves the explanation, and sends more of the page than your
+            selection alone. Off by default.
+          </small>
+        </span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Sites</h2>
+      <label class="field block">
+        <span>Never run on these sites</span>
+        <textarea id="disabledHosts" rows="3" placeholder="example.com&#10;intranet.local"></textarea>
+        <small>One hostname per line. Subdomains are included.</small>
+      </label>
+    </section>
+
+    <section>
+      <h2>Data</h2>
+      <p class="note">
+        Quick Look keeps no lookup history. Definitions are cached in memory only
+        and vanish when the browser suspends the extension, so there is nothing
+        on disk recording what you read.
+      </p>
+      <button id="clearCache">Clear cached definitions</button>
+    </section>
+
+    <p class="saved" id="saved" hidden>Saved</p>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

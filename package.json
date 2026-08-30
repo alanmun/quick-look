@@ -1,0 +1,21 @@
+{
+  "name": "quick-look",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Double-click any word to see what it means, without leaving the page.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tools/render.mjs && node tools/probe.mjs && node build.mjs && node tools/smoke.mjs",
+    "test:ranking": "node tools/probe.mjs",
+    "test:integration": "node build.mjs && node tools/smoke.mjs",
+    "senses": "node tools/senses.mjs",
+    "test:render": "node tools/render.mjs",
+    "lint": "node build.mjs firefox && web-ext lint --source-dir=dist/firefox --no-config-discovery",
+    "package:firefox": "node build.mjs firefox && cd dist/firefox && zip -r -FS ../../web-ext-artifacts/quick-look-firefox.zip . -x '.*'",
+    "package:chrome": "node build.mjs chrome && cd dist/chrome && zip -r -FS ../../web-ext-artifacts/quick-look-chrome.zip . -x '.*'",
+    "package:source": "zip -r -FS web-ext-artifacts/quick-look-source.zip src tools build.mjs package.json README.md -x '.*'",
+    "sign": "node build.mjs firefox && web-ext sign --source-dir=dist/firefox --channel=unlisted --no-config-discovery"
+  },
+  "license": "MIT"
+}

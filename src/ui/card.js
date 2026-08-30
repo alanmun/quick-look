@@ -17,6 +17,22 @@
     return String(sense.pos || '').toLowerCase();
   }
 
+  // Wiktionary text is CC BY-SA 4.0, which requires crediting the source via a
+  // link to the original page. This is a licence obligation, not decoration --
+  // it is the one link in the card, and the only thing that opens a tab, and
+  // only ever because the reader deliberately clicked it.
+  function sourceLink(word) {
+    const a = document.createElement('a');
+    a.className = 'source';
+    a.textContent = 'Wiktionary · CC BY-SA';
+    a.href = 'https://en.wiktionary.org/wiki/' + encodeURIComponent(word || '');
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.title = 'Open the Wiktionary entry for “' + (word || '') + '”';
+    a.addEventListener('click', (e) => e.stopPropagation());
+    return a;
+  }
+
   // ---- states -------------------------------------------------------------
 
   function renderLoading(root, query) {
@@ -133,7 +149,9 @@
     if (senses.length > 1) {
       foot.appendChild(el('span', 'hint', canExplain ? '← →' : '← → to browse senses'));
     }
-    if (foot.childNodes.length) card.appendChild(foot);
+    // Attribution is required, so the footer is now unconditional.
+    foot.appendChild(sourceLink(result.word || result.query));
+    card.appendChild(foot);
 
     root.replaceChildren(card);
     return card;
@@ -199,10 +217,11 @@
       line.appendChild(el('span', 'spinner'));
       line.appendChild(document.createTextNode('Explaining…'));
       foot.appendChild(line);
-    } else if (!state.llmEnabled) {
-      foot.appendChild(el('span', 'hint', 'Enable plain-English explanation in settings'));
     }
-    if (foot.childNodes.length) card.appendChild(foot);
+    // Attribution for the definitions shown in the rows above.
+    foot.appendChild(sourceLink((state.parts && state.parts[0]
+      && (state.parts[0].result.word || state.parts[0].term)) || ''));
+    card.appendChild(foot);
 
     root.replaceChildren(card);
     return card;

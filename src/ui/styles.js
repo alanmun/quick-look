@@ -183,6 +183,15 @@
 .action:hover { text-decoration: underline; }
 .action:focus-visible { outline: 2px solid var(--ql-accent); outline-offset: 1px; }
 .hint { color: var(--ql-muted); font-size: 11px; }
+.source {
+  color: var(--ql-muted);
+  font-size: 11px;
+  text-decoration: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.source:hover { color: var(--ql-accent); text-decoration: underline; }
+.source:focus-visible { outline: 2px solid var(--ql-accent); outline-offset: 1px; }
 
 .state { padding: 12px; color: var(--ql-muted); font-size: 13px; }
 .state.error { color: #c0392b; }

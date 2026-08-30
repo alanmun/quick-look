@@ -115,7 +115,7 @@ scenario('translation with lemma note', () => QL.card.renderWord(root, {
   },
 }, handlers));
 
-scenario('single sense, no LLM (footer must be absent)', () => QL.card.renderWord(root, {
+scenario('single sense, no LLM (footer is attribution only)', () => QL.card.renderWord(root, {
   kind: 'word', index: 0, showExamples: false, llmEnabled: false,
   result: {
     word: 'ubiquitous', query: 'ubiquitous', langCode: 'en', langName: 'English',

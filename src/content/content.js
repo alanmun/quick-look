@@ -182,7 +182,9 @@
         ? 'No entry for “' + QL.sanitize.clamp(text, 40) + '”.'
         : reason === 'passage-mode-off'
           ? 'Passage mode is turned off.'
-          : 'No definition found.';
+          : reason === 'rate-limited'
+            ? 'Wiktionary is rate-limiting requests right now. Try again in a moment.'
+            : 'No definition found.';
       place(QL.card.renderMessage(mountPoint(), message, false), rect);
       return;
     }

@@ -64,20 +64,33 @@ let first = true;
 for (const c of cases) {
   // Wikimedia rate-limits the wikitext endpoint; pace the suite so failures
   // are ranking failures rather than throttling.
-  if (!first) await sleep(1200);
+  if (!first) await sleep(2500);
   first = false;
   const ctx = QL.context.build(c.page || {});
   const userLangs = ['en'];
   const posHint = QL.context.posHint((c.page || {}).before);
   const script = QL.langs.detectScript(c.q);
 
-  let r;
-  try {
-    r = await QL.wiktionary.lookup(c.q, {
-      fetchImpl: deps.fetchImpl, ctx, userLangs, posHint, selectionScript: script,
-    });
-  } catch (e) {
-    console.log(`\x1b[31mERR\x1b[0m  ${c.q}: ${e.message}`);
+  // Wikimedia throttles bursts, and a 429 is not a ranking failure. Retry with
+  // backoff so this suite reports on scoring rather than on network luck.
+  let r = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      r = await QL.wiktionary.lookup(c.q, {
+        fetchImpl: deps.fetchImpl, ctx, userLangs, posHint, selectionScript: script,
+      });
+    } catch (e) {
+      console.log(`\x1b[31mERR\x1b[0m  ${c.q}: ${e.message}`);
+      break;
+    }
+    if (!r || r.reason !== 'rate-limited') break;
+    const wait = 4000 * (attempt + 1);
+    process.stdout.write(`\x1b[2m  throttled on "${c.q}", waiting ${wait / 1000}s…\x1b[0m\n`);
+    await sleep(wait);
+    r = null;
+  }
+  if (!r) {
+    console.log(`\x1b[31mERR\x1b[0m  ${c.q}: gave up after repeated rate limiting`);
     continue;
   }
 

@@ -94,6 +94,14 @@
       },
     });
     if (res.status === 404) return null;
+    if (res.status === 429) {
+      // Wikimedia throttles bursts. Deliberately not retried: a retry would
+      // compound the problem, and the user can simply select the word again.
+      // What matters is that this never masquerades as "no such word".
+      const err = new Error('wiktionary rate-limited');
+      err.rateLimited = true;
+      throw err;
+    }
     if (!res.ok) throw new Error('wiktionary ' + res.status);
     return res.json();
   }
@@ -102,6 +110,15 @@
   //
   // deps: { fetchImpl, ctx, userLangs, selectionScript, posHint }
   async function lookup(rawQuery, deps) {
+    try {
+      return await lookupInner(rawQuery, deps);
+    } catch (e) {
+      if (e && e.rateLimited) return { ok: false, reason: 'rate-limited' };
+      throw e;
+    }
+  }
+
+  async function lookupInner(rawQuery, deps) {
     const d = deps || {};
     const query = QL.morph.normalizeQuery(rawQuery);
     if (!query) return { ok: false, reason: 'empty' };

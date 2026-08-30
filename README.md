@@ -2,9 +2,7 @@
 
 Double-click any word to see what it means, without leaving the page.
 
-A replacement for [Dictionary Anywhere](https://github.com/meetDeveloper/Dictionary-Anywhere),
-built around the thing that extension gets wrong: not *fetching* a definition,
-but choosing the **right** one.
+I built this to be a replacement for extensions like [Dictionary Anywhere](https://github.com/meetDeveloper/Dictionary-Anywhere) due to common frustrations I ran into. Lack of knowing the right result to actually present (different definition than what I needed, not being aware of language differences (Do I want to know the definition or do I not even know the language I'm seeing on my screen and need that translated too?), and worst of all, a lot of common words would just fail to be defined entirely.
 
 ## Why this exists
 

@@ -57,7 +57,7 @@ const OPTIONS = [
 ];
 
 const BANNER = (name, files) =>
-  `// Quick Look -- generated bundle (${name}). Do not edit.\n`
+  `// Look Up -- generated bundle (${name}). Do not edit.\n`
   + `// Sources, in order:\n`
   + files.map((f) => `//   src/${f}`).join('\n')
   + `\n\n`;
@@ -183,7 +183,7 @@ function manifestFor(target, base) {
       gecko: {
         // Permanent once submitted to AMO. Override via EXT_ID before the
         // first signing run; it cannot be changed afterwards.
-        id: process.env.EXT_ID || 'quick-look@alanmun',
+        id: process.env.EXT_ID || 'look-up@alanmun',
         // Set by the newest manifest key in use, per web-ext lint:
         // optional_host_permissions needs 128, data_collection_permissions
         // needs 140. The higher one wins.

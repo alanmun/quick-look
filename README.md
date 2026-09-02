@@ -1,4 +1,4 @@
-# Quick Look
+# Look Up
 
 Double-click any word to see what it means, without leaving the page.
 
@@ -100,8 +100,12 @@ It was chosen because it accepts *any* callback URL — which matters, since
 Firefox's extension redirect URL is per-installation and can't be pre-registered.
 
 Anthropic and OpenAI have no equivalent public OAuth grant for third-party apps;
-they are key-only. A paste-a-key path covers those, plus Groq, Gemini's
-compatibility layer, and a local Ollama server.
+they are key-only, so there is also a paste-a-key path. It offers two API
+styles: **Anthropic**, which speaks Claude's own Messages API (`x-api-key`, a
+version header, and the explicit opt-in header that browser-origin calls
+require), and **OpenAI-compatible**, which covers OpenAI, Groq, Gemini's
+compatibility layer, and a local Ollama server. `tools/smoke.mjs` pins both wire
+formats.
 
 When enabled, your selected text goes to that provider. Nothing else in the
 extension does that, and the options page says so plainly.
@@ -130,18 +134,23 @@ support (bug 1573659), so it gets `background.scripts`; Chrome gets
 Firefox target. It currently reports **0 errors, 0 warnings, 0 notices**.
 
 ```sh
-npm run lint              # AMO validator
-npm run package:firefox   # → web-ext-artifacts/quick-look-firefox.zip
-npm run package:source    # → source archive, required for AMO review
-npm run sign              # signed .xpi, unlisted channel
+npm run release           # tests → lint → package → sign (unlisted)
+npm run release:dry       # all of the above except the upload
 ```
 
-Signing reads `WEB_EXT_API_KEY` / `WEB_EXT_API_SECRET` from the environment.
-`web-ext` does not load `.env` itself, so:
+`npm run release` runs the whole pipeline. It is a thin wrapper
+(`tools/release.mjs`) started under Node's `--env-file-if-exists=.env`, so
+`WEB_EXT_API_KEY` / `WEB_EXT_API_SECRET` are loaded from `.env` and inherited by
+`web-ext` — nothing has to be exported by hand. It refuses to start if the
+credentials are missing, and prints the extension ID before doing anything.
 
-```sh
-set -a && . ./.env && set +a && npm run sign
-```
+Flags: `--listed` (public AMO channel instead of unlisted), `--chrome` (also
+write the Chrome zip), `--dry-run`, and `--skip-tests` — the last for when the
+live-API suite is failing on Wikimedia rate limiting rather than on a
+regression.
+
+The individual steps are still available: `npm run lint`, `npm run
+package:firefox`, `npm run package:chrome`, `npm run package:source`.
 
 Copy `.env.example` to `.env` to start. Note those are **AMO API credentials**,
 generated at *Developer Hub → Manage API Keys* — not your Mozilla account
@@ -163,7 +172,7 @@ same category, so it needs no separate entry. This is what Firefox shows the
 user at install time.
 
 **The extension ID is permanent.** `EXT_ID` in `.env` (default
-`quick-look@alanmun`) becomes the add-on's identity the first time you sign
+`look-up@alanmun`) becomes the add-on's identity the first time you sign
 under it and cannot be changed afterwards.
 
 ### Channels
@@ -246,3 +255,13 @@ the regression suite passes when the label fetch fails.
   the optional AI layer adds.
 - Content scripts don't run in cross-origin iframes (`all_frames` is off, to
   keep the injected surface small).
+
+## License
+
+Copyright (c) 2026 Alan Munirji.
+
+Licensed under the [Mozilla Public License 2.0](LICENSE). MPL is file-level
+copyleft: you can fork Look Up, embed it, or ship it commercially, but any
+modification to a file from this repository has to stay open under the same
+license. Combining it with proprietary code of your own is fine — rebranding it
+and closing the source is not.

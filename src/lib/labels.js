@@ -135,7 +135,7 @@
       signal: AbortSignal.timeout(deps.labelTimeoutMs || 3500),
       headers: {
         Accept: 'application/json',
-        'Api-User-Agent': 'QuickLook/0.1 (browser extension; https://github.com/quick-look)',
+        'Api-User-Agent': 'LookUp/0.1 (browser extension; https://github.com/alanmun/look-up)',
       },
     });
     if (!res.ok) return null;

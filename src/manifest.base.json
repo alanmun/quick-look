@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Quick Look",
+  "name": "Look Up",
   "version": "0.1.0",
   "description": "Double-click any word to see what it means, without leaving the page.",
   "icons": {

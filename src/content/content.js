@@ -33,7 +33,7 @@
 
   function ensureHost() {
     if (host && host.isConnected) return;
-    host = document.createElement('quick-look-popup');
+    host = document.createElement('look-up-popup');
     // The page must not be able to reach into the card.
     shadow = host.attachShadow({ mode: 'closed' });
     const style = document.createElement('style');
@@ -170,7 +170,7 @@
       response = await api.runtime.sendMessage({ type: 'lookup', payload: { text, page } });
     } catch (e) {
       if (seq !== requestSeq) return;
-      place(QL.card.renderMessage(mountPoint(), 'Quick Look could not reach its background page.', true), rect);
+      place(QL.card.renderMessage(mountPoint(), 'Look Up could not reach its background page.', true), rect);
       return;
     }
     if (seq !== requestSeq) return;

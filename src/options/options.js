@@ -33,12 +33,23 @@
     $('modifierRow').style.display = $('trigger').value === 'modifier' ? '' : 'none';
   }
 
+  // Anthropic's base URL is fixed, so it is filled in rather than asked for.
+  function syncManualHints() {
+    const anthropic = $('llmKind').value === 'anthropic';
+    const A = QL.providers.ANTHROPIC;
+    $('llmBaseUrl').placeholder = anthropic ? A.baseUrl : 'https://api.groq.com/openai/v1';
+    $('llmModel').placeholder = anthropic ? A.defaultModel : 'llama-3.3-70b-versatile';
+    if (anthropic && !$('llmBaseUrl').value.trim()) $('llmBaseUrl').value = A.baseUrl;
+  }
+
   async function load() {
     const s = await QL.settings.getAll();
     for (const id of CHECKBOXES) $(id).checked = Boolean(s[id]);
     for (const id of SELECTS) $(id).value = s[id];
     for (const id of TEXTS) $(id).value = s[id] || '';
+    $('llmKind').value = s.llmProvider === 'anthropic' ? 'anthropic' : 'openai-compatible';
     $('disabledHosts').value = (s.disabledHosts || []).join('\n');
+    syncManualHints();
     syncConditionalUI();
     await refreshProviderStatus();
   }
@@ -64,7 +75,8 @@
       return;
     }
     const when = status.connectedAt ? new Date(status.connectedAt).toLocaleDateString() : '';
-    const label = status.provider === 'openrouter' ? 'OpenRouter' : 'a custom endpoint';
+    const LABELS = { openrouter: 'OpenRouter', anthropic: 'Anthropic' };
+    const label = LABELS[status.provider] || 'a custom endpoint';
     box.textContent = `Connected to ${label}${when ? ' since ' + when : ''}. Selected text will be sent there when you ask for an explanation.`;
   }
 
@@ -114,9 +126,13 @@
     flashSaved();
   });
 
+  $('llmKind').addEventListener('change', syncManualHints);
+
   $('saveManual').addEventListener('click', async () => {
+    const provider = $('llmKind').value;
     const key = $('manualKey').value.trim();
-    const base = $('llmBaseUrl').value.trim();
+    const base = $('llmBaseUrl').value.trim()
+      || (provider === 'anthropic' ? QL.providers.ANTHROPIC.baseUrl : '');
     if (!key || !base) {
       $('providerStatus').textContent = 'A base URL and a key are both required.';
       return;
@@ -133,11 +149,9 @@
       $('providerStatus').textContent = 'Permission to reach that host was declined.';
       return;
     }
-    await QL.settings.setCredential({
-      provider: 'openai-compatible', key, connectedAt: Date.now(),
-    });
+    await QL.settings.setCredential({ provider, key, connectedAt: Date.now() });
     await QL.settings.set({
-      llmEnabled: true, llmProvider: 'openai-compatible',
+      llmEnabled: true, llmProvider: provider,
       llmBaseUrl: base, llmModel: $('llmModel').value.trim(),
     });
     $('manualKey').value = '';

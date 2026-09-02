@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quick Look settings</title>
+  <title>Look Up settings</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <main>
-    <h1>Quick Look</h1>
+    <h1>Look Up</h1>
 
     <section>
       <h2>Looking things up</h2>
@@ -94,7 +94,7 @@
       <p class="warn" id="egressWarning">
         When enabled, the text you select is sent to the provider you connect.
         That is a real change in where your reading goes &mdash; everything else
-        in Quick Look only ever contacts Wiktionary.
+        in Look Up only ever contacts Wiktionary.
       </p>
 
       <div class="status" id="providerStatus">Checking…</div>
@@ -112,11 +112,18 @@
       <details>
         <summary>Use a different provider (paste a key)</summary>
         <p class="note small">
-          Any OpenAI-compatible endpoint &mdash; Groq, Gemini's compatibility
-          layer, or a local Ollama server. The key is stored in extension
-          storage on this machine and is never sent anywhere except the endpoint
-          you name here.
+          Anthropic's Claude models, or any OpenAI-compatible endpoint &mdash;
+          OpenAI, Groq, Gemini's compatibility layer, or a local Ollama server.
+          The key is stored in extension storage on this machine and is never
+          sent anywhere except the endpoint you name here.
         </p>
+        <label class="field">
+          <span>API style</span>
+          <select id="llmKind">
+            <option value="openai-compatible">OpenAI-compatible</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+          </select>
+        </label>
         <label class="field">
           <span>Base URL</span>
           <input type="url" id="llmBaseUrl" placeholder="https://api.groq.com/openai/v1">
@@ -156,7 +163,7 @@
     <section>
       <h2>Data</h2>
       <p class="note">
-        Quick Look keeps no lookup history. Definitions are cached in memory only
+        Look Up keeps no lookup history. Definitions are cached in memory only
         and vanish when the browser suspends the extension, so there is nothing
         on disk recording what you read.
       </p>

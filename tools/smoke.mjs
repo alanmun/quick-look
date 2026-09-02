@@ -19,7 +19,7 @@ let listener = null;
 
 globalThis.browser = {
   runtime: {
-    id: 'quick-look@test',
+    id: 'look-up@test',
     onMessage: { addListener: (fn) => { listener = fn; } },
   },
   storage: {
@@ -58,7 +58,7 @@ if (!listener) {
 
 function send(message) {
   return new Promise((resolve) => {
-    const kept = listener(message, { id: 'quick-look@test' }, resolve);
+    const kept = listener(message, { id: 'look-up@test' }, resolve);
     if (kept !== true) resolve(undefined);
   });
 }
@@ -141,6 +141,68 @@ globalThis.fetch = (url, ...rest) => {
 await send({ type: 'lookup', payload: { text: 'daemon', page: { hostname: 'stackoverflow.com' } } });
 check('repeat lookup re-uses the cached definition', defCalls === 0, `${defCalls} definition fetches`);
 globalThis.fetch = realFetch;
+
+// ---- Anthropic wire format -------------------------------------------------
+//
+// Claude speaks its own Messages API, not the OpenAI chat shape, so this pins
+// the parts that would fail silently or with an opaque CORS error if they
+// regressed: the endpoint, the auth header, the browser opt-in header, and
+// where the answer is read from in the response.
+const providers = globalThis.QL?.providers;
+check('providers module is exposed by the bundle', Boolean(providers));
+
+if (providers) {
+  const anthropicSettings = {
+    llmEnabled: true, llmProvider: 'anthropic', llmModel: '', llmBaseUrl: '',
+  };
+
+  const endpoint = providers.endpointFor(anthropicSettings);
+  check('anthropic endpoint is the Messages API',
+    endpoint.url === 'https://api.anthropic.com/v1/messages' && endpoint.kind === 'anthropic',
+    endpoint.url);
+  check('anthropic defaults to a current model',
+    endpoint.model === providers.ANTHROPIC.defaultModel, endpoint.model);
+
+  const kept = globalThis.fetch;
+  let seen = null;
+  globalThis.fetch = async (url, init) => {
+    seen = { url: String(url), init };
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          stop_reason: 'end_turn',
+          content: [
+            { type: 'thinking', thinking: '' },
+            { type: 'text', text: 'It means the thing it means.' },
+          ],
+        };
+      },
+    };
+  };
+
+  const answer = await providers.explain(
+    'nunc pro tunc', anthropicSettings, { key: 'sk-ant-test' },
+  );
+  globalThis.fetch = kept;
+
+  const headers = seen?.init?.headers || {};
+  const body = JSON.parse(seen?.init?.body || '{}');
+
+  check('anthropic uses x-api-key, not bearer auth',
+    headers['x-api-key'] === 'sk-ant-test' && !headers.Authorization);
+  check('anthropic sends the version header',
+    headers['anthropic-version'] === providers.ANTHROPIC.version);
+  check('anthropic opts into direct browser access',
+    headers['anthropic-dangerous-direct-browser-access'] === 'true');
+  check('anthropic sends system separately from messages',
+    typeof body.system === 'string' && body.messages.every((m) => m.role !== 'system'));
+  check('anthropic omits parameters current models reject',
+    body.temperature === undefined && body.thinking === undefined);
+  check('anthropic answer is read from the text block',
+    answer === 'It means the thing it means.', answer);
+}
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nall checks passed');
 process.exitCode = failures ? 1 : 0;

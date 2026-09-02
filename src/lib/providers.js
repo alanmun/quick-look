@@ -21,6 +21,19 @@
     defaultModel: 'meta-llama/llama-3.3-70b-instruct:free',
   };
 
+  // Anthropic speaks its own Messages API rather than the OpenAI chat shape, so
+  // it gets its own request and response handling below. Calling it straight
+  // from a browser context also needs an explicit opt-in header -- without it
+  // the preflight is refused.
+  const ANTHROPIC = {
+    id: 'anthropic',
+    label: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    origin: 'https://api.anthropic.com/*',
+    version: '2023-06-01',
+    defaultModel: 'claude-opus-5',
+  };
+
   // ---- PKCE ---------------------------------------------------------------
 
   function base64url(bytes) {
@@ -113,11 +126,84 @@
 
   function endpointFor(settings) {
     if (settings.llmProvider === 'openrouter') {
-      return { url: OPENROUTER.chatUrl, model: settings.llmModel || OPENROUTER.defaultModel };
+      return {
+        kind: 'openai',
+        url: OPENROUTER.chatUrl,
+        model: settings.llmModel || OPENROUTER.defaultModel,
+      };
+    }
+    if (settings.llmProvider === 'anthropic') {
+      const base = String(settings.llmBaseUrl || ANTHROPIC.baseUrl).replace(/\/+$/, '');
+      return {
+        kind: 'anthropic',
+        url: base + '/messages',
+        model: settings.llmModel || ANTHROPIC.defaultModel,
+      };
     }
     const base = String(settings.llmBaseUrl || '').replace(/\/+$/, '');
     if (!base) throw new Error('No API base URL is configured.');
-    return { url: base + '/chat/completions', model: settings.llmModel || 'gpt-4o-mini' };
+    return {
+      kind: 'openai',
+      url: base + '/chat/completions',
+      model: settings.llmModel || 'gpt-4o-mini',
+    };
+  }
+
+  // The two wire formats differ in three places -- auth header, request body,
+  // and where the text lives in the response -- so each is described once here
+  // and `explain` stays shape-agnostic.
+  function requestFor(kind, model, key, userContent) {
+    if (kind === 'anthropic') {
+      return {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': ANTHROPIC.version,
+          // Anthropic blocks browser-origin calls unless the caller opts in.
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: {
+          model,
+          // Current Claude models think by default, and thinking tokens count
+          // against max_tokens -- so leave room, and ask for the least thinking
+          // the job needs. A three-sentence gloss needs very little.
+          max_tokens: 1024,
+          output_config: { effort: 'low' },
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userContent }],
+        },
+      };
+    }
+    return {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + key,
+      },
+      body: {
+        model,
+        max_tokens: 300,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+      },
+    };
+  }
+
+  function textFrom(kind, json) {
+    if (kind === 'anthropic') {
+      // A response carries thinking blocks alongside the answer; only the text
+      // blocks are the answer.
+      const blocks = (json && Array.isArray(json.content)) ? json.content : [];
+      return blocks
+        .filter((b) => b && b.type === 'text' && b.text)
+        .map((b) => b.text)
+        .join('\n')
+        .trim();
+    }
+    return (json && json.choices && json.choices[0]
+      && json.choices[0].message && json.choices[0].message.content) || '';
   }
 
   // `text` is the selection. `context` is the surrounding sentence and is only
@@ -126,29 +212,20 @@
     if (!settings.llmEnabled) throw new Error('Explanation is turned off.');
     if (!credential || !credential.key) throw new Error('No provider is connected.');
 
-    const { url, model } = endpointFor(settings);
+    const { kind, url, model } = endpointFor(settings);
     const userContent = settings.llmSendContext && context
       ? 'Text to explain:\n' + text + '\n\nIt appears in this context:\n' + context
       : 'Text to explain:\n' + text;
+
+    const { headers, body } = requestFor(kind, model, credential.key, userContent);
 
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
       signal: AbortSignal.timeout(20000),
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + credential.key,
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 300,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-      }),
+      headers,
+      body: JSON.stringify(body),
     });
 
     if (res.status === 401 || res.status === 403) {
@@ -158,14 +235,19 @@
     if (!res.ok) throw new Error('Provider error (' + res.status + ').');
 
     const json = await res.json();
-    const content = json && json.choices && json.choices[0]
-      && json.choices[0].message && json.choices[0].message.content;
+
+    // Claude can decline a request without erroring: HTTP 200, no text blocks.
+    if (kind === 'anthropic' && json && json.stop_reason === 'refusal') {
+      throw new Error('The model declined to explain that text.');
+    }
+
+    const content = textFrom(kind, json);
     if (!content) throw new Error('The provider returned an empty response.');
     return QL.sanitize.clamp(String(content).trim(), 900);
   }
 
   QL.providers = {
-    OPENROUTER, connectOpenRouter, explain, endpointFor,
+    OPENROUTER, ANTHROPIC, connectOpenRouter, explain, endpointFor,
     ensureHostPermission, dropHostPermission, createVerifier, challengeFor,
   };
 })();

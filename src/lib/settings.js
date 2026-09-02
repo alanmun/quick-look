@@ -21,7 +21,7 @@
     // Optional LLM. Off unless the user turns it on, and even then the host
     // permission is requested separately at connect time.
     llmEnabled: false,
-    llmProvider: 'openrouter',  // 'openrouter' | 'openai-compatible'
+    llmProvider: 'openrouter',  // 'openrouter' | 'openai-compatible' | 'anthropic'
     llmModel: '',
     llmBaseUrl: '',
     llmSendContext: false,      // send surrounding sentence, not just selection

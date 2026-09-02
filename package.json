@@ -14,8 +14,8 @@
     "lint": "node build.mjs firefox && web-ext lint --source-dir=dist/firefox --no-config-discovery",
     "package:firefox": "node build.mjs firefox && cd dist/firefox && zip -r -FS ../../web-ext-artifacts/quick-look-firefox.zip . -x '.*'",
     "package:chrome": "node build.mjs chrome && cd dist/chrome && zip -r -FS ../../web-ext-artifacts/quick-look-chrome.zip . -x '.*'",
-    "package:source": "zip -r -FS web-ext-artifacts/quick-look-source.zip src tools build.mjs package.json README.md -x '.*'",
+    "package:source": "zip -r -FS web-ext-artifacts/quick-look-source.zip src tools build.mjs package.json README.md LICENSE -x '.*'",
     "sign": "node build.mjs firefox && web-ext sign --source-dir=dist/firefox --channel=unlisted --no-config-discovery"
   },
-  "license": "MIT"
+  "license": "MPL-2.0"
 }

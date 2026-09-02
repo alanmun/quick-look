@@ -49,6 +49,11 @@
   --ql-chip-bg: #f2f4f7;
   --ql-chip-fg: #4a5568;
   --ql-hover: #f5f6f8;
+  /* Pager controls sit at the edge of the card and were getting lost against
+     it, so they are deliberately higher-contrast than the muted footer text.
+     On dark this is ghostwhite; on light, muted-grey would be the same problem
+     in reverse, so it inverts. */
+  --ql-pager: #15161a;
 }
 @media (prefers-color-scheme: dark) {
   .card {
@@ -61,6 +66,7 @@
     --ql-chip-bg: #2c2e33;
     --ql-chip-fg: #b6bcc4;
     --ql-hover: #2a2c30;
+    --ql-pager: ghostwhite;
   }
 }
 
@@ -82,7 +88,7 @@
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
-  color: var(--ql-muted);
+  color: var(--ql-pager);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -94,14 +100,14 @@
   display: grid;
   place-items: center;
   border-radius: 5px;
-  color: var(--ql-muted);
+  color: var(--ql-pager);
   font-size: 13px;
   line-height: 1;
 }
 .pager button:hover:not([disabled]) { background: var(--ql-hover); color: var(--ql-fg); }
-.pager button[disabled] { opacity: 0.3; cursor: default; }
+.pager button[disabled] { opacity: 0.4; cursor: default; }
 .pager button:focus-visible { outline: 2px solid var(--ql-accent); outline-offset: 1px; }
-.count { padding: 0 3px; min-width: 30px; text-align: center; }
+.count { padding: 0 3px; min-width: 30px; text-align: center; color: var(--ql-pager); }
 
 .sub {
   padding: 0 12px 8px;
@@ -182,7 +188,7 @@
 }
 .action:hover { text-decoration: underline; }
 .action:focus-visible { outline: 2px solid var(--ql-accent); outline-offset: 1px; }
-.hint { color: var(--ql-muted); font-size: 11px; }
+.hint { color: var(--ql-muted); font-size: 12.5px; }
 .source {
   color: var(--ql-muted);
   font-size: 11px;
